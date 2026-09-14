@@ -78,15 +78,13 @@
         .touch-btn:active { background: rgba(196, 211, 0, 0.6); }
         .dir-btns { display: flex; gap: 15px; }
     </style>
-    
-    <!-- ТОЗИ СКРИПТ УБИВА ОФЛАЙН РЕЖИМА, ЗА ДА СЕ ОБНОВЯВА ВИНАГИ -->
+    <link rel="manifest" href="manifest.json">
+
     <script>
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            registration.unregister();
-          }
-        });
+        navigator.serviceWorker.register('sw.js')
+          .then(() => console.log("Офлайн режимът е готов!"))
+          .catch(err => console.log("Грешка:", err));
       }
     </script>
 </head>
@@ -153,6 +151,7 @@
         const audioKomentarite = new Audio('komentarite.m4a');
         const randomAudios = [
             new Audio('kucheto.m4a'),
+            new Audio('put.m4a'),
             new Audio('qponci.m4a'),
             new Audio('slavi2.m4a'),
             new Audio('67.m4a')
@@ -216,7 +215,7 @@
             document.getElementById('gameOverOverlay').style.display = 'none';
             document.getElementById('mainMenu').style.display = 'flex';
             document.getElementById('touchControls').style.display = 'none';
-            document.getElementById('hud').style.display = 'none';
+            document.getElementById('hud').style.display = 'none'; 
             updateMenuUI();
         }
 
@@ -274,8 +273,9 @@
                 x: 100, y: 100, 
                 width: 65, height: 95,       
                 vx: 0, vy: 0, 
-                speed: 0.7, maxSpeed: 6,0,    
-                jumpPower: -13,0, /* Намален скок */
+                speed: 0.7, 
+                maxSpeed: 5.5,    
+                jumpPower: -15.0, /* По-висок скок */
                 grounded: false 
             };
             generateGround(800);
