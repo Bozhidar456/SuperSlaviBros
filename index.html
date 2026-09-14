@@ -29,6 +29,7 @@
             background-color: #5C94FC; border: 4px solid #000; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             image-rendering: pixelated; width: 100%; height: 100%; cursor: pointer; display: block;
             box-sizing: border-box;
+            transform: translateZ(0); /* Хардуерно ускорение за плавност на телефон */
         }
 
         /* Менюта */
@@ -67,7 +68,8 @@
         .book-owned span { color: #4CAF50; font-weight: bold; }
 
         #touchControls {
-            display: flex; justify-content: space-between;
+            display: none; /* Скрити по подразбиране (в менюто) */
+            justify-content: space-between;
             width: 100%; max-width: 800px; padding: 15px 20px; box-sizing: border-box; user-select: none;
         }
         .touch-btn {
@@ -231,6 +233,7 @@
             gameState = 'MENU';
             document.getElementById('gameOverOverlay').style.display = 'none';
             document.getElementById('mainMenu').style.display = 'flex';
+            document.getElementById('touchControls').style.display = 'none'; // Скриване на бутоните в менюто
             updateMenuUI();
         }
 
@@ -269,13 +272,14 @@
                     sound.currentTime = 0;
                     sound.play().catch(e => console.log("Audio prevented:", e));
                 }
-            }, 5000); // Точно 5 секунди между звуците
+            }, 5000); // 5 секунди между звуците
         }
 
         function startGame() {
             gameState = 'PLAYING';
             document.getElementById('mainMenu').style.display = 'none';
             document.getElementById('gameOverOverlay').style.display = 'none';
+            document.getElementById('touchControls').style.display = 'flex'; // Показване на бутоните по време на игра
             
             blocks = []; enemies = []; activeCoins = [];
             cameraX = 0; score = 0; currentRunClashvits = 0; lastGeneratedX = -100; 
@@ -301,6 +305,7 @@
         function triggerGameOver(reason) {
             gameState = 'GAMEOVER';
             clearInterval(randomAudioInterval); 
+            document.getElementById('touchControls').style.display = 'none'; // Скриване на бутоните при загуба
 
             if (reason === 'abyss') {
                 audioKomentarite.currentTime = 0;
@@ -315,6 +320,7 @@
             window.open(targetUrl, '_blank');
             gameState = 'PLAYING';
             document.getElementById('gameOverOverlay').style.display = 'none';
+            document.getElementById('touchControls').style.display = 'flex'; // Връщане на бутоните след реклама
 
             player.x = cameraX + 100;
             player.y = 50;
