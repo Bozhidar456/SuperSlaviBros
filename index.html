@@ -79,14 +79,6 @@
         .dir-btns { display: flex; gap: 15px; }
     </style>
     <link rel="manifest" href="manifest.json">
-
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js')
-          .then(() => console.log("Офлайн режимът е готов!"))
-          .catch(err => console.log("Грешка:", err));
-      }
-    </script>
 </head>
 <body>
 
@@ -159,8 +151,18 @@
         let randomAudioInterval;
         let lastAudioIndex = -1;
 
-        let totalClashvits = parseInt(localStorage.getItem('clashBros_totalClashvits')) || 0;
-        let ownedBooks = JSON.parse(localStorage.getItem('clashBros_ownedBooks')) || [];
+        // Защита от повредена памет на устройството
+        let totalClashvits = 0;
+        let ownedBooks = [];
+        try {
+            totalClashvits = parseInt(localStorage.getItem('clashBros_totalClashvits')) || 0;
+            ownedBooks = JSON.parse(localStorage.getItem('clashBros_ownedBooks')) || [];
+        } catch(e) {
+            console.log("Грешка при четене на localStorage:", e);
+            totalClashvits = 0;
+            ownedBooks = [];
+        }
+
         let gameState = 'MENU';
 
         const assets = { 
@@ -185,6 +187,7 @@
 
         const addTouch = (id, code) => {
             const el = document.getElementById(id);
+            if (!el) return;
             el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[code] = true; });
             el.addEventListener('touchend', (e) => { e.preventDefault(); keys[code] = false; });
             el.addEventListener('touchcancel', (e) => { e.preventDefault(); keys[code] = false; });
@@ -202,10 +205,12 @@
             document.getElementById('totalClashvitsUI').innerText = totalClashvits;
             [1, 2, 3].forEach(id => {
                 const bookEl = document.getElementById(`book${id}`);
-                const span = bookEl.querySelector('span');
-                if (ownedBooks.includes(id)) {
-                    bookEl.classList.add('book-owned');
-                    span.innerText = "КУПЕНА";
+                if (bookEl) {
+                    const span = bookEl.querySelector('span');
+                    if (ownedBooks.includes(id)) {
+                        bookEl.classList.add('book-owned');
+                        if (span) span.innerText = "КУПЕНА";
+                    }
                 }
             });
         }
@@ -215,7 +220,7 @@
             document.getElementById('gameOverOverlay').style.display = 'none';
             document.getElementById('mainMenu').style.display = 'flex';
             document.getElementById('touchControls').style.display = 'none';
-            document.getElementById('hud').style.display = 'none'; 
+            document.getElementById('hud').style.display = 'none';
             updateMenuUI();
         }
 
@@ -262,7 +267,7 @@
             document.getElementById('mainMenu').style.display = 'none';
             document.getElementById('gameOverOverlay').style.display = 'none';
             document.getElementById('touchControls').style.display = 'flex';
-            document.getElementById('hud').style.display = 'flex'; 
+            document.getElementById('hud').style.display = 'flex';
             
             blocks = []; enemies = []; activeCoins = [];
             cameraX = 0; score = 0; currentRunClashvits = 0; lastGeneratedX = -100; 
@@ -290,7 +295,7 @@
             gameState = 'GAMEOVER';
             clearInterval(randomAudioInterval); 
             document.getElementById('touchControls').style.display = 'none';
-            document.getElementById('hud').style.display = 'none'; 
+            document.getElementById('hud').style.display = 'none';
 
             if (reason === 'abyss') {
                 audioKomentarite.currentTime = 0;
@@ -306,7 +311,7 @@
             gameState = 'PLAYING';
             document.getElementById('gameOverOverlay').style.display = 'none';
             document.getElementById('touchControls').style.display = 'flex';
-            document.getElementById('hud').style.display = 'flex'; 
+            document.getElementById('hud').style.display = 'flex';
 
             player.x = cameraX + 100;
             player.y = 50;
