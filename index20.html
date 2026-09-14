@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Clash Bros - Тайнственото тичане</title>
+    <style>
+        body {
+            margin: 0; background-color: #222; display: flex;
+            flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; font-family: 'Courier New', Courier, monospace; color: white;
+            overflow-y: auto; touch-action: none; padding: 10px 0; box-sizing: border-box;
+        }
+        #hud {
+            display: flex; justify-content: space-between;
+            width: 100%; max-width: 800px; padding: 0 10px; box-sizing: border-box;
+            font-size: 20px; color: #C4D300; font-weight: bold; margin-bottom: 5px;
+        }
+        .hud-item { background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 10px; border: 2px solid #555; }
+        
+        #game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 16 / 9;
+        }
+
+        canvas {
+            background-color: #5C94FC; border: 4px solid #000; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            image-rendering: pixelated; width: 100%; height: 100%; cursor: pointer; display: block;
+            box-sizing: border-box;
+        }
+
+        /* Менюта */
+        .overlay-menu {
+            display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.95); flex-direction: column;
+            justify-content: center; align-items: center; z-index: 999;
+            box-sizing: border-box; border: 4px solid #000; text-align: center;
+        }
+
+        .overlay-menu h2 { color: #C4D300; font-size: 28px; margin: 0 0 10px 0; font-family: Arial, sans-serif; }
+        .overlay-menu p { font-size: 18px; margin: 0 0 15px 0; font-family: Arial, sans-serif; }
+
+        .game-btn {
+            padding: 12px 20px; font-size: 15px; font-weight: bold; border: none;
+            border-radius: 8px; cursor: pointer; margin: 5px; transition: 0.2s;
+            font-family: Arial, sans-serif;
+        }
+        .game-btn:active { transform: scale(0.95); }
+        .btn-reward { background-color: #FF9800; color: white; }
+        .btn-restart { background-color: #C4D300; color: #000; }
+        .btn-shop { background-color: #00BCD4; color: #fff; }
+
+        /* Магазин */
+        #shop-container {
+            display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; flex-wrap: wrap;
+        }
+        .book-item {
+            background: #333; border: 2px solid #555; border-radius: 10px; padding: 10px;
+            width: 100px; cursor: pointer; transition: 0.2s; font-family: Arial, sans-serif;
+        }
+        .book-item:hover { border-color: #C4D300; }
+        .book-item img { width: 50px; height: 70px; background: #666; margin-bottom: 5px; display: block; margin: 0 auto; object-fit: cover; }
+        .book-item span { font-size: 11px; display: block; margin-top: 5px; color: #FF9800; }
+        .book-owned { border-color: #4CAF50; background: #1b331c; cursor: default; }
+        .book-owned span { color: #4CAF50; font-weight: bold; }
+
+        #touchControls {
+            display: flex; justify-content: space-between;
+            width: 100%; max-width: 800px; padding: 15px 20px; box-sizing: border-box; user-select: none;
+        }
+        .touch-btn {
+            background: rgba(255, 255, 255, 0.2); border: 2px solid #C4D300;
+            border-radius: 10px; padding: 15px 25px; font-size: 24px; font-weight: bold; color: white;
+        }
+        .touch-btn:active { background: rgba(196, 211, 0, 0.6); }
+        .dir-btns { display: flex; gap: 15px; }
+        
+        #top-box {
+            width: 100%; max-width: 800px; display: flex; justify-content: center;
+            align-items: center; min-height: 50px; margin-bottom: 10px;
+        }
+    </style>
+    <link rel="manifest" href="manifest.json">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log("Офлайн режимът е готов!"))
+      .catch(err => console.log("Грешка:", err));
+  }
+</script>
+</head>
+<body>
+
+    <div id="top-box">
+        <script type="text/javascript">
+          atOptions = {
+            'key' : '75d42eab9aab34d4ff84b2b343a7738b',
+            'format' : 'iframe',
+            'height' : 50,
+            'width' : 320,
+            'params' : {}
+          };
+        </script>
+        <script type="text/javascript" src="https://www.highperformanceformat.com/75d42eab9aab34d4ff84b2b343a7738b/invoke.js"></script>
+    </div>
+
+    <div id="hud">
+        <div id="scoreBoard" class="hud-item">Дистанция: 0m</div>
+        <div id="coinBoard" class="hud-item">🪙 Клашвити: 0</div>
+    </div>
+    
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="800" height="450"></canvas>
+
+        <div id="mainMenu" class="overlay-menu">
+            <h2>Топ Мистерии: Играта</h2>
+            <p>Общо Клашвити: <strong id="totalClashvitsUI" style="color: #FF9800; font-size: 24px;">0</strong></p>
+            
+            <div id="shop-container">
+                <div class="book-item" id="book1" onclick="buyBook(1, 50)">
+                    <img src="book1.png" alt="Книга 1">
+                    Книга 1
+                    <span>Цена: 50</span>
+                </div>
+                <div class="book-item" id="book2" onclick="buyBook(2, 100)">
+                    <img src="book2.png" alt="Книга 2">
+                    Книга 2
+                    <span>Цена: 100</span>
+                </div>
+                <div class="book-item" id="book3" onclick="buyBook(3, 150)">
+                    <img src="book3.png" alt="Книга 3">
+                    Книга 3
+                    <span>Цена: 150</span>
+                </div>
+            </div>
+
+            <button class="game-btn btn-reward" onclick="watchAdForClashvits()">🎬 Изгледай реклама за +5 Клашвита</button>
+            <button class="game-btn btn-restart" onclick="startGame()">▶️ ЗАПОЧНИ ИГРА</button>
+        </div>
+
+        <div id="gameOverOverlay" class="overlay-menu">
+            <h2>ФАКТ: Загуби животите си!</h2>
+            <p id="finalScoreText">Дистанция: 0m | Събрани: 0</p>
+            <button class="game-btn btn-reward" onclick="watchAdAndContinue()">🎬 Гледай реклама за продължаване</button>
+            <button class="game-btn btn-restart" onclick="startGame()">🔄 Нова игра</button>
+            <button class="game-btn btn-shop" onclick="showMenu()">🏠 Към менюто</button>
+        </div>
+    </div>
+    
+    <div id="touchControls">
+        <div class="dir-btns">
+            <div class="touch-btn" id="btnLeft">⬅️</div>
+            <div class="touch-btn" id="btnRight">➡️</div>
+        </div>
+        <div class="touch-btn" id="btnJump">⬆️ СКОК</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const targetUrl = "https://www.profitableratecpmnetwork.com/chzuevnf?key=d1330940cb86f60ffe212280f9f125af";
+
+        // АУДИО ФАЙЛОВЕ (добавени са 2 нови + защита срещу повтаряне)
+        const audioSlavi = new Audio('slavi.m4a');
+        const audioKomentarite = new Audio('komentarite.m4a');
+        const randomAudios = [
+            new Audio('kucheto.m4a'),
+            new Audio('put.m4a'),
+            new Audio('sponsori.m4a'),
+            new Audio('nov_audio1.m4a'), // Тук можеш да смениш името на 1-вото ново аудио
+            new Audio('nov_audio2.m4a')  // Тук можеш да смениш името на 2-рото ново аудио
+        ];
+        let randomAudioInterval;
+        let lastAudioIndex = -1; // Запомня последно пуснатия звук, за да не се повтаря
+
+        let totalClashvits = parseInt(localStorage.getItem('clashBros_totalClashvits')) || 0;
+        let ownedBooks = JSON.parse(localStorage.getItem('clashBros_ownedBooks')) || [];
+        let gameState = 'MENU';
+
+        const assets = { 
+            slavi: new Image(), 
+            enemy: new Image(), 
+            box: new Image(), 
+            pipe: new Image(), 
+            coin: new Image() 
+        };
+        assets.slavi.src = 'slavi.png';
+        assets.enemy.src = 'protivnic1.png'; 
+        assets.box.src = 'box.png';         
+        assets.pipe.src = 'truba.png';      
+        assets.coin.src = 'clashvit.png';
+
+        const keys = {};
+        window.addEventListener('keydown', e => { 
+            keys[e.code] = true; 
+            if (e.code === 'Enter' && gameState === 'GAMEOVER') startGame();
+        });
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        const addTouch = (id, code) => {
+            const el = document.getElementById(id);
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[code] = true; });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); keys[code] = false; });
+            el.addEventListener('touchcancel', (e) => { e.preventDefault(); keys[code] = false; });
+        };
+        addTouch('btnLeft', 'KeyA'); addTouch('btnRight', 'KeyD'); addTouch('btnJump', 'Space');
+
+        let cameraX = 0, score = 0, currentRunClashvits = 0, lastGeneratedX = 0;
+        let blocks = [], enemies = [], activeCoins = [], player = {};
+
+        const gravity = 0.35; 
+        const friction = 0.88;     
+        const GROUND_Y = 400;
+
+        function updateMenuUI() {
+            document.getElementById('totalClashvitsUI').innerText = totalClashvits;
+            [1, 2, 3].forEach(id => {
+                const bookEl = document.getElementById(`book${id}`);
+                const span = bookEl.querySelector('span');
+                if (ownedBooks.includes(id)) {
+                    bookEl.classList.add('book-owned');
+                    span.innerText = "КУПЕНА";
+                }
+            });
+        }
+
+        function showMenu() {
+            gameState = 'MENU';
+            document.getElementById('gameOverOverlay').style.display = 'none';
+            document.getElementById('mainMenu').style.display = 'flex';
+            updateMenuUI();
+        }
+
+        function buyBook(bookId, price) {
+            if (ownedBooks.includes(bookId)) return;
+            if (totalClashvits >= price) {
+                totalClashvits -= price;
+                ownedBooks.push(bookId);
+                localStorage.setItem('clashBros_totalClashvits', totalClashvits);
+                localStorage.setItem('clashBros_ownedBooks', JSON.stringify(ownedBooks));
+                updateMenuUI();
+                alert("Честито! Ти успешно отключи тази книга!");
+            } else {
+                alert(`Нямаш достатъчно Клашвити! Трябват ти още ${price - totalClashvits}.`);
+            }
+        }
+
+        function watchAdForClashvits() {
+            window.open(targetUrl, '_blank');
+            totalClashvits += 5;
+            localStorage.setItem('clashBros_totalClashvits', totalClashvits);
+            updateMenuUI();
+        }
+
+        function startRandomAudio() {
+            clearInterval(randomAudioInterval);
+            randomAudioInterval = setInterval(() => {
+                if (gameState === 'PLAYING') {
+                    let randomIndex;
+                    // Избираме произволен индекс, който е различен от предния, за да няма повтаряне
+                    do {
+                        randomIndex = Math.floor(Math.random() * randomAudios.length);
+                    } while (randomIndex === lastAudioIndex && randomAudios.length > 1);
+
+                    lastAudioIndex = randomIndex;
+                    const sound = randomAudios[randomIndex];
+                    sound.currentTime = 0;
+                    sound.play().catch(e => console.log("Audio prevented:", e));
+                }
+            }, 7000);
+        }
+
+        function startGame() {
+            gameState = 'PLAYING';
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('gameOverOverlay').style.display = 'none';
+            
+            blocks = []; enemies = []; activeCoins = [];
+            cameraX = 0; score = 0; currentRunClashvits = 0; lastGeneratedX = -100; 
+            
+            document.getElementById('coinBoard').innerText = `🪙 Клашвити: 0`;
+
+            player = {
+                x: 100, y: 100, 
+                width: 65, height: 95,       
+                vx: 0, vy: 0, 
+                speed: 0.45, maxSpeed: 3.8,    
+                jumpPower: -11.5,
+                grounded: false 
+            };
+            generateGround(800);
+
+            audioSlavi.currentTime = 0;
+            audioSlavi.play().catch(e => console.log("Audio prevented:", e));
+            
+            startRandomAudio();
+        }
+
+        function triggerGameOver(reason) {
+            gameState = 'GAMEOVER';
+            clearInterval(randomAudioInterval); 
+
+            if (reason === 'abyss') {
+                audioKomentarite.currentTime = 0;
+                audioKomentarite.play().catch(e => console.log("Audio prevented:", e));
+            }
+
+            document.getElementById('finalScoreText').innerText = `Дистанция: ${score}m | Събрани: ${currentRunClashvits}`;
+            document.getElementById('gameOverOverlay').style.display = 'flex';
+        }
+
+        function watchAdAndContinue() {
+            window.open(targetUrl, '_blank');
+            gameState = 'PLAYING';
+            document.getElementById('gameOverOverlay').style.display = 'none';
+
+            player.x = cameraX + 100;
+            player.y = 50;
+            player.vx = 0;
+            player.vy = 0;
+
+            enemies = enemies.filter(e => Math.abs(e.x - player.x) > 300);
+            
+            startRandomAudio();
+        }
+
+        function addClashvit() {
+            currentRunClashvits++;
+            totalClashvits++;
+            localStorage.setItem('clashBros_totalClashvits', totalClashvits);
+            document.getElementById('coinBoard').innerText = `🪙 Клашвити: ${currentRunClashvits}`;
+        }
+
+        function generateGround(length) {
+            blocks.push({ x: lastGeneratedX, y: GROUND_Y, w: length, h: 60, type: 'ground' });
+            lastGeneratedX += length;
+        }
+
+        function generateSection() {
+            const rand = Math.random();
+            if (rand < 0.4) { 
+                const segmentLen = 200 + Math.random() * 200; 
+                if (Math.random() > 0.4) {
+                    enemies.push({ x: lastGeneratedX + 100, y: GROUND_Y - 40, w: 40, h: 40, vx: -1.2, vy: 0, dead: false });
+                }
+                generateGround(segmentLen);
+            } else if (rand < 0.7) {
+                lastGeneratedX += (130 + Math.random() * 100);
+                generateGround(150); 
+            } else {
+                generateGround(80);
+                const pipeH = 60 + Math.random() * 90;
+                blocks.push({ x: lastGeneratedX, y: GROUND_Y - pipeH, w: 70, h: pipeH, type: 'pipe' });
+                lastGeneratedX += 70;
+                generateGround(150);
+            }
+            if(Math.random() > 0.6) {
+                const bx = lastGeneratedX - 120;
+                blocks.push({ x: bx, y: GROUND_Y - 170, w: 45, h: 45, type: 'box', hit: false });
+            }
+        }
+
+        function update() {
+            if (gameState !== 'PLAYING') return;
+
+            if (cameraX + canvas.width > lastGeneratedX - 400) generateSection();
+
+            blocks = blocks.filter(b => b.x + b.w > cameraX - 100);
+            enemies = enemies.filter(e => e.x + e.w > cameraX - 100 && !e.shouldRemove);
+
+            for (let i = activeCoins.length - 1; i >= 0; i--) {
+                let c = activeCoins[i]; 
+                c.y += c.vy; 
+                c.vy += 0.25; 
+                c.alpha -= 0.012; 
+                if (c.alpha <= 0) activeCoins.splice(i, 1);
+            }
+
+            if (keys['KeyD'] || keys['ArrowRight']) player.vx += player.speed;
+            if (keys['KeyA'] || keys['ArrowLeft']) player.vx -= player.speed;
+            player.vx *= friction;
+            player.vx = Math.max(-player.maxSpeed, Math.min(player.maxSpeed, player.vx)); 
+
+            player.x += player.vx;
+            if (player.x > cameraX + canvas.width / 3) cameraX = player.x - canvas.width / 3;
+            if (player.x < cameraX) { player.x = cameraX; player.vx = 0; }
+
+            for (let b of blocks) {
+                if (player.x < b.x + b.w && player.x + player.width > b.x &&
+                    player.y < b.y + b.h && player.y + player.height > b.y) {
+                    if (player.vx > 0) { player.x = b.x - player.width; player.vx = 0; }
+                    else if (player.vx < 0) { player.x = b.x + b.w; player.vx = 0; }
+                }
+            }
+
+            player.vy += gravity;
+            if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.grounded) {
+                player.vy = player.jumpPower;
+                player.grounded = false;
+            }
+
+            player.y += player.vy;
+            player.grounded = false;
+
+            for (let b of blocks) {
+                if (player.x < b.x + b.w && player.x + player.width > b.x &&
+                    player.y < b.y + b.h && player.y + player.height > b.y) {
+                    if (player.vy > 0 && (player.y + player.height - player.vy) <= b.y + 15) {
+                        player.y = b.y - player.height; player.vy = 0; player.grounded = true;
+                    } else if (player.vy < 0 && (player.y - player.vy) >= b.y + b.h - 15) {
+                        player.y = b.y + b.h; player.vy = 0;
+                        if (b.type === 'box' && !b.hit) {
+                            b.hit = true;
+                            addClashvit();
+                            activeCoins.push({ x: b.x + 6, y: b.y - 35, w: 32, h: 48, vy: -8.5, alpha: 1 });
+                        }
+                    }
+                }
+            }
+
+            for (let e of enemies) {
+                if (e.dead) continue;
+                e.vy += gravity; e.y += e.vy; e.x += e.vx;
+
+                for (let b of blocks) {
+                    if (e.x < b.x + b.w && e.x + e.w > b.x && e.y < b.y + b.h && e.y + e.h > b.y) {
+                        if (e.vy > 0 && (e.y + e.h - e.vy) <= b.y + 10) { e.y = b.y - e.h; e.vy = 0; } 
+                        else if (b.type === 'pipe' || b.type === 'box') { e.vx *= -1; if (e.vx > 0) e.x = b.x + b.w; else e.x = b.x - e.w; }
+                    }
+                }
+                if (e.y > canvas.height) e.shouldRemove = true;
+
+                if (player.x < e.x + e.w && player.x + player.width > e.x && player.y < e.y + e.h && player.y + player.height > e.y) {
+                    if (player.vy > 0 && player.y + player.height < e.y + 25) {
+                        e.dead = true; player.vy = -8; 
+                    } else { 
+                        triggerGameOver('enemy'); 
+                    }
+                }
+            }
+
+            score = Math.floor(player.x / 10);
+            document.getElementById('scoreBoard').innerText = `Дистанция: ${score}m`;
+            
+            if (player.y > canvas.height + 100) triggerGameOver('abyss');
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (gameState === 'MENU') return; 
+
+            ctx.save(); 
+            ctx.translate(-Math.floor(cameraX), 0); 
+
+            for (let b of blocks) {
+                if (b.type === 'ground') { 
+                    ctx.fillStyle = '#C84C0C'; ctx.fillRect(b.x, b.y, b.w, b.h); 
+                } else if (b.type === 'box') {
+                    ctx.save(); 
+                    if (b.hit) ctx.globalAlpha = 0.4;
+                    if (assets.box.complete && assets.box.naturalWidth !== 0) {
+                        ctx.drawImage(assets.box, b.x, b.y, b.w, b.h);
+                    } else {
+                        ctx.fillStyle = '#FFD700'; ctx.fillRect(b.x, b.y, b.w, b.h);
+                    }
+                    ctx.restore();
+                } else if (b.type === 'pipe') {
+                    if (assets.pipe.complete && assets.pipe.naturalWidth !== 0) {
+                        ctx.drawImage(assets.pipe, b.x, b.y, b.w, b.h);
+                    } else {
+                        ctx.fillStyle = '#2E7D32'; ctx.fillRect(b.x, b.y, b.w, b.h);
+                    }
+                }
+            }
+
+            for (let c of activeCoins) {
+                ctx.save(); ctx.globalAlpha = c.alpha;
+                if (assets.coin.complete && assets.coin.naturalWidth !== 0) {
+                    ctx.drawImage(assets.coin, c.x, c.y, c.w, c.h);
+                } else {
+                    ctx.fillStyle = '#FF9800'; ctx.fillRect(c.x, c.y, c.w, c.h);
+                }
+                ctx.restore();
+            }
+
+            for (let e of enemies) {
+                if (!e.dead) {
+                    if (assets.enemy.complete && assets.enemy.naturalWidth !== 0) {
+                        ctx.drawImage(assets.enemy, e.x, e.y, e.w, e.h);
+                    } else {
+                        ctx.fillStyle = '#D32F2F'; ctx.fillRect(e.x, e.y, e.w, e.h);
+                    }
+                }
+            }
+
+            if (assets.slavi.complete && assets.slavi.naturalWidth !== 0) {
+                ctx.drawImage(assets.slavi, player.x, player.y, player.width, player.height);
+            } else {
+                ctx.fillStyle = '#4CAF50'; ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
+
+            ctx.restore();
+        }
+
+        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+        
+        showMenu();
+        gameLoop();
+    </script>
+    
+    <!-- SOCIAL BAR БАНЕР -->
+    <script src="https://pl31335607.profitableratecpmnetwork.com/ee/e5/5d/eee55d1d5c9aeef50c3e5be895bd39c3.js"></script>
+</body>
+</html>
