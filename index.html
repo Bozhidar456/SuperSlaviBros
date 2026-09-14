@@ -12,7 +12,8 @@
             overflow-y: auto; touch-action: none; padding: 10px 0; box-sizing: border-box;
         }
         #hud {
-            display: flex; justify-content: space-between;
+            display: none; /* Скрито по подразбиране в менюто */
+            justify-content: space-between;
             width: 100%; max-width: 800px; padding: 0 10px; box-sizing: border-box;
             font-size: 20px; color: #C4D300; font-weight: bold; margin-bottom: 5px;
         }
@@ -29,10 +30,9 @@
             background-color: #5C94FC; border: 4px solid #000; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             image-rendering: pixelated; width: 100%; height: 100%; cursor: pointer; display: block;
             box-sizing: border-box;
-            transform: translateZ(0); /* Хардуерно ускорение за плавност на телефон */
+            transform: translateZ(0);
         }
 
-        /* Менюта */
         .overlay-menu {
             display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.95); flex-direction: column;
@@ -53,7 +53,6 @@
         .btn-restart { background-color: #C4D300; color: #000; }
         .btn-shop { background-color: #00BCD4; color: #fff; }
 
-        /* Магазин */
         #shop-container {
             display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; flex-wrap: wrap;
         }
@@ -68,7 +67,7 @@
         .book-owned span { color: #4CAF50; font-weight: bold; }
 
         #touchControls {
-            display: none; /* Скрити по подразбиране (в менюто) */
+            display: none;
             justify-content: space-between;
             width: 100%; max-width: 800px; padding: 15px 20px; box-sizing: border-box; user-select: none;
         }
@@ -78,14 +77,10 @@
         }
         .touch-btn:active { background: rgba(196, 211, 0, 0.6); }
         .dir-btns { display: flex; gap: 15px; }
-        
-        #top-box {
-            width: 100%; max-width: 800px; display: flex; justify-content: center;
-            align-items: center; min-height: 50px; margin-bottom: 10px;
-        }
     </style>
-    <link rel="manifest" href="manifest.json">
-<script>
+    
+    <!-- ТОЗИ СКРИПТ УБИВА ОФЛАЙН РЕЖИМА, ЗА ДА СЕ ОБНОВЯВА ВИНАГИ -->
+    <script>
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
           for(let registration of registrations) {
@@ -96,8 +91,6 @@
     </script>
 </head>
 <body>
-
-
 
     <div id="hud">
         <div id="scoreBoard" class="hud-item">Дистанция: 0m</div>
@@ -194,24 +187,9 @@
 
         const addTouch = (id, code) => {
             const el = document.getElementById(id);
-
-            el.addEventListener('pointerdown', (e) => {
-                e.preventDefault();
-                keys[code] = true;
-            });
-
-            el.addEventListener('pointerup', (e) => {
-                e.preventDefault();
-                keys[code] = false;
-            });
-
-            el.addEventListener('pointercancel', () => {
-                keys[code] = false;
-            });
-
-            el.addEventListener('pointerleave', () => {
-                keys[code] = false;
-            });
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[code] = true; });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); keys[code] = false; });
+            el.addEventListener('touchcancel', (e) => { e.preventDefault(); keys[code] = false; });
         };
         addTouch('btnLeft', 'KeyA'); addTouch('btnRight', 'KeyD'); addTouch('btnJump', 'Space');
 
@@ -238,7 +216,7 @@
             gameState = 'MENU';
             document.getElementById('gameOverOverlay').style.display = 'none';
             document.getElementById('mainMenu').style.display = 'flex';
-            document.getElementById('touchControls').style.display = 'none'; // Скриване на бутоните в менюто
+            document.getElementById('touchControls').style.display = 'none';
             document.getElementById('hud').style.display = 'none';
             updateMenuUI();
         }
@@ -278,15 +256,15 @@
                     sound.currentTime = 0;
                     sound.play().catch(e => console.log("Audio prevented:", e));
                 }
-            }, 7000); // 5 секунди между звуците
+            }, 5000);
         }
 
         function startGame() {
             gameState = 'PLAYING';
             document.getElementById('mainMenu').style.display = 'none';
             document.getElementById('gameOverOverlay').style.display = 'none';
-            document.getElementById('touchControls').style.display = 'flex'; // Показване на бутоните по време на игра
-            document.getElementById('hud').style.display = 'flex';
+            document.getElementById('touchControls').style.display = 'flex';
+            document.getElementById('hud').style.display = 'flex'; 
             
             blocks = []; enemies = []; activeCoins = [];
             cameraX = 0; score = 0; currentRunClashvits = 0; lastGeneratedX = -100; 
@@ -297,8 +275,8 @@
                 x: 100, y: 100, 
                 width: 65, height: 95,       
                 vx: 0, vy: 0, 
-                speed: 0.7, maxSpeed: 6.0,    
-                jumpPower: -6,0,
+                speed: 0.7, maxSpeed: 5.5,    
+                jumpPower: -8.5, /* Намален скок */
                 grounded: false 
             };
             generateGround(800);
@@ -312,7 +290,8 @@
         function triggerGameOver(reason) {
             gameState = 'GAMEOVER';
             clearInterval(randomAudioInterval); 
-            document.getElementById('touchControls').style.display = 'none'; // Скриване на бутоните при загуба
+            document.getElementById('touchControls').style.display = 'none';
+            document.getElementById('hud').style.display = 'none'; 
 
             if (reason === 'abyss') {
                 audioKomentarite.currentTime = 0;
@@ -327,14 +306,17 @@
             window.open(targetUrl, '_blank');
             gameState = 'PLAYING';
             document.getElementById('gameOverOverlay').style.display = 'none';
-            document.getElementById('touchControls').style.display = 'flex'; // Връщане на бутоните след реклама
+            document.getElementById('touchControls').style.display = 'flex';
+            document.getElementById('hud').style.display = 'flex'; 
 
             player.x = cameraX + 100;
             player.y = 50;
             player.vx = 0;
             player.vy = 0;
 
-            enemies = enemies.filter(e => Math.abs(e.x - player.x) > 300);
+            for(let i = enemies.length - 1; i >= 0; i--) {
+                if (Math.abs(enemies[i].x - player.x) <= 300) enemies.splice(i, 1);
+            }
             
             startRandomAudio();
         }
@@ -356,7 +338,7 @@
             if (rand < 0.4) { 
                 const segmentLen = 200 + Math.random() * 200; 
                 if (Math.random() > 0.4) {
-                    enemies.push({ x: lastGeneratedX + 100, y: GROUND_Y - 40, w: 40, h: 40, vx: -1.2, vy: 0, dead: false });
+                    enemies.push({ x: lastGeneratedX + 100, y: GROUND_Y - 40, w: 40, h: 40, vx: -1.2, vy: 0, dead: false, shouldRemove: false });
                 }
                 generateGround(segmentLen);
             } else if (rand < 0.7) {
@@ -380,8 +362,13 @@
 
             if (cameraX + canvas.width > lastGeneratedX - 400) generateSection();
 
-            blocks = blocks.filter(b => b.x + b.w > cameraX - 100);
-            enemies = enemies.filter(e => e.x + e.w > cameraX - 100 && !e.shouldRemove);
+            for (let i = blocks.length - 1; i >= 0; i--) {
+                if (blocks[i].x + blocks[i].w < cameraX - 100) blocks.splice(i, 1);
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                if (enemies[i].x + enemies[i].w < cameraX - 100 || enemies[i].shouldRemove) enemies.splice(i, 1);
+            }
 
             for (let i = activeCoins.length - 1; i >= 0; i--) {
                 let c = activeCoins[i]; 
@@ -438,7 +425,7 @@
                 e.vy += gravity; e.y += e.vy; e.x += e.vx;
 
                 for (let b of blocks) {
-                    if (e.x < b.x + b.w && e.x + e.w > b.x && e.y < b.y + b.h && e.y + e.h > b.y) {
+                    if (e.x < b.x + b.w && e.x + b.w > b.x && e.y < b.y + b.h && e.y + e.h > b.y) {
                         if (e.vy > 0 && (e.y + e.h - e.vy) <= b.y + 10) { e.y = b.y - e.h; e.vy = 0; } 
                         else if (b.type === 'pipe' || b.type === 'box') { e.vx *= -1; if (e.vx > 0) e.x = b.x + b.w; else e.x = b.x - e.w; }
                     }
@@ -517,21 +504,10 @@
             ctx.restore();
         }
 
-        function gameLoop() {
-            if (gameState === 'PLAYING') {
-                update();
-                draw();
-            } else {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
+        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
         
         showMenu();
         gameLoop();
     </script>
-    
-
 </body>
 </html>
