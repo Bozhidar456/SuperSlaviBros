@@ -33,7 +33,7 @@
 
         /* Менюта */
         .overlay-menu {
-            display: flex; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.95); flex-direction: column;
             justify-content: center; align-items: center; z-index: 999;
             box-sizing: border-box; border: 4px solid #000; text-align: center;
@@ -82,6 +82,15 @@
             align-items: center; min-height: 50px; margin-bottom: 10px;
         }
     </style>
+    <link rel="manifest" href="manifest.json">
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => console.log("Офлайн режимът е готов!"))
+          .catch(err => console.log("Грешка:", err));
+      }
+    </script>
 </head>
 <body>
 
@@ -128,11 +137,11 @@
                 </div>
             </div>
 
-            <button class="game-btn btn-reward" onclick="watchAdForClashvits()">🎬 Изгледай реклама за +5 Клашвита</button>
+            <button class="game-btn btn-reward" onclick="watchAdForClashvits()">🎬 Изгледай паранормална реклама за +5 Клашвита</button>
             <button class="game-btn btn-restart" onclick="startGame()">▶️ ЗАПОЧНИ ИГРА</button>
         </div>
 
-        <div id="gameOverOverlay" class="overlay-menu" style="display: none;">
+        <div id="gameOverOverlay" class="overlay-menu">
             <h2>ФАКТ: Загуби животите си!</h2>
             <p id="finalScoreText">Дистанция: 0m | Събрани: 0</p>
             <button class="game-btn btn-reward" onclick="watchAdAndContinue()">🎬 Гледай реклама за продължаване</button>
@@ -160,9 +169,9 @@
         const randomAudios = [
             new Audio('kucheto.m4a'),
             new Audio('put.m4a'),
-            new Audio('sponsori.m4a'),
-            new Audio('nov_audio1.m4a'),
-            new Audio('nov_audio2.m4a')
+            new Audio('qponci.m4a'),
+            new Audio('slavi2.m4a'),
+            new Audio('67.m4a')
         ];
         let randomAudioInterval;
         let lastAudioIndex = -1;
@@ -260,7 +269,7 @@
                     sound.currentTime = 0;
                     sound.play().catch(e => console.log("Audio prevented:", e));
                 }
-            }, 7000);
+            }, 5000); // Точно 5 секунди между звуците
         }
 
         function startGame() {
@@ -500,5 +509,8 @@
         showMenu();
         gameLoop();
     </script>
+    
+    <!-- SOCIAL BAR БАНЕР -->
+    <script src="https://pl31335607.profitableratecpmnetwork.com/ee/e5/5d/eee55d1d5c9aeef50c3e5be895bd39c3.js"></script>
 </body>
 </html>
