@@ -171,8 +171,9 @@
             new Audio('kucheto.m4a'),
             new Audio('put.m4a'),
             new Audio('sponsori.m4a'),
-            new Audio('nov_audio1.m4a'), // Тук можеш да смениш името на 1-вото ново аудио
-            new Audio('nov_audio2.m4a')  // Тук можеш да смениш името на 2-рото ново аудио
+            new Audio('qponci.m4a'), // Тук можеш да смениш името на 1-вото ново аудио
+            new Audio('67.m4a')  // Тук можеш да смениш името на 2-рото ново аудио
+            new Audio('slavi2.m4a')  // Тук можеш да смениш името на 2-рото ново аудио
         ];
         let randomAudioInterval;
         let lastAudioIndex = -1; // Запомня последно пуснатия звук, за да не се повтаря
@@ -271,7 +272,7 @@
                     sound.currentTime = 0;
                     sound.play().catch(e => console.log("Audio prevented:", e));
                 }
-            }, 7000);
+            }, 5000);
         }
 
         function startGame() {
