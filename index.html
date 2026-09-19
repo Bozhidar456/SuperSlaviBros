@@ -12,7 +12,7 @@
             overflow-y: auto; touch-action: none; padding: 10px 0; box-sizing: border-box;
         }
         #hud {
-            display: none; /* Скрито по подразбиране в менюто */
+            display: none; 
             justify-content: space-between;
             width: 100%; max-width: 800px; padding: 0 10px; box-sizing: border-box;
             font-size: 20px; color: #C4D300; font-weight: bold; margin-bottom: 5px;
@@ -63,8 +63,14 @@
         .book-item:hover { border-color: #C4D300; }
         .book-item img { width: 50px; height: 70px; background: #666; margin-bottom: 5px; display: block; margin: 0 auto; object-fit: cover; }
         .book-item span { font-size: 11px; display: block; margin-top: 5px; color: #FF9800; }
+        
         .book-owned { border-color: #4CAF50; background: #1b331c; cursor: default; }
         .book-owned span { color: #4CAF50; font-weight: bold; }
+        
+        /* Стил за купена книга, която може да се чете */
+        .book-readable { cursor: pointer !important; }
+        .book-readable:hover { border-color: #FF9800 !important; }
+        .book-readable span { color: #FF9800 !important; }
 
         #touchControls {
             display: none;
@@ -95,17 +101,19 @@
             <p>Общо Клашвити: <strong id="totalClashvitsUI" style="color: #FF9800; font-size: 24px;">0</strong></p>
             
             <div id="shop-container">
-                <div class="book-item" id="book1" onclick="buyBook(1, 50)">
+                <!-- Книга 1 вече има линк към topbulgaria.html -->
+                <div class="book-item" id="book1" onclick="handleBookClick(1, 50, 'topbulgaria.html')">
                     <img src="book1.png" alt="Книга 1">
                     Книга 1
                     <span>Цена: 50</span>
                 </div>
-                <div class="book-item" id="book2" onclick="buyBook(2, 100)">
+                <!-- Другите книги засега нямат линк (null) -->
+                <div class="book-item" id="book2" onclick="handleBookClick(2, 100, null)">
                     <img src="book2.png" alt="Книга 2">
                     Книга 2
                     <span>Цена: 100</span>
                 </div>
-                <div class="book-item" id="book3" onclick="buyBook(3, 150)">
+                <div class="book-item" id="book3" onclick="handleBookClick(3, 150, null)">
                     <img src="book3.png" alt="Книга 3">
                     Книга 3
                     <span>Цена: 150</span>
@@ -141,11 +149,22 @@
 
         const audioSlavi = new Audio('slavi.m4a');
         const audioKomentarite = new Audio('komentarite.m4a');
+        
+        // Тук са добавени старите + новите 8 аудио файла
         const randomAudios = [
             new Audio('kucheto.m4a'),
+            new Audio('put.m4a'),
             new Audio('qponci.m4a'),
             new Audio('slavi2.m4a'),
-            new Audio('67.m4a')
+            new Audio('67.m4a'),
+            new Audio('14.09.2026 12.15.m4a'),
+            new Audio('16.09.2026 16.52.m4a'),
+            new Audio('16.09.2026 16.54.m4a'),
+            new Audio('16.09.2026 16.57.m4a'),
+            new Audio('16.09.2026 16.59.m4a'),
+            new Audio('19.09.2026 13.28.m4a'),
+            new Audio('19.09.2026 13.30.m4a'),
+            new Audio('19.09.2026 13.31.m4a')
         ];
         let randomAudioInterval;
         let lastAudioIndex = -1;
@@ -202,29 +221,42 @@
 
         function updateMenuUI() {
             document.getElementById('totalClashvitsUI').innerText = totalClashvits;
-            [1, 2, 3].forEach(id => {
-                const bookEl = document.getElementById(`book${id}`);
+            
+            // Настройки за всяка книга (коя има линк за четене)
+            const booksData = [
+                { id: 1, hasLink: true },
+                { id: 2, hasLink: false },
+                { id: 3, hasLink: false }
+            ];
+
+            booksData.forEach(book => {
+                const bookEl = document.getElementById(`book${book.id}`);
                 if (bookEl) {
                     const span = bookEl.querySelector('span');
-                    if (ownedBooks.includes(id)) {
+                    if (ownedBooks.includes(book.id)) {
                         bookEl.classList.add('book-owned');
-                        if (span) span.innerText = "КУПЕНА";
+                        if (book.hasLink) {
+                            bookEl.classList.add('book-readable');
+                            if (span) span.innerText = "ПРОЧЕТИ 📖";
+                        } else {
+                            if (span) span.innerText = "КУПЕНА";
+                        }
                     }
                 }
             });
         }
 
-        function showMenu() {
-            gameState = 'MENU';
-            document.getElementById('gameOverOverlay').style.display = 'none';
-            document.getElementById('mainMenu').style.display = 'flex';
-            document.getElementById('touchControls').style.display = 'none';
-            document.getElementById('hud').style.display = 'none';
-            updateMenuUI();
-        }
-
-        function buyBook(bookId, price) {
-            if (ownedBooks.includes(bookId)) return;
+        // Новата функция за книгите, която поддържа и четене
+        function handleBookClick(bookId, price, url) {
+            // Ако вече е купена
+            if (ownedBooks.includes(bookId)) {
+                if (url) {
+                    window.location.href = url; // Зарежда html файла за четене
+                }
+                return;
+            }
+            
+            // Ако не е купена, опитваме да я купим
             if (totalClashvits >= price) {
                 totalClashvits -= price;
                 ownedBooks.push(bookId);
@@ -235,6 +267,15 @@
             } else {
                 alert(`Нямаш достатъчно Клашвити! Трябват ти още ${price - totalClashvits}.`);
             }
+        }
+
+        function showMenu() {
+            gameState = 'MENU';
+            document.getElementById('gameOverOverlay').style.display = 'none';
+            document.getElementById('mainMenu').style.display = 'flex';
+            document.getElementById('touchControls').style.display = 'none';
+            document.getElementById('hud').style.display = 'none';
+            updateMenuUI();
         }
 
         function watchAdForClashvits() {
@@ -278,8 +319,8 @@
                 width: 65, height: 95,       
                 vx: 0, vy: 0, 
                 speed: 0.7, 
-                maxSpeed: 8.0,    
-                jumpPower: -11.0, /* По-висок скок */
+                maxSpeed: 5.5,    
+                jumpPower: -15.0,
                 grounded: false 
             };
             generateGround(800);
