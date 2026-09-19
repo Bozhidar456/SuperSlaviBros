@@ -101,8 +101,8 @@
             <p>Общо Клашвити: <strong id="totalClashvitsUI" style="color: #FF9800; font-size: 24px;">0</strong></p>
             
             <div id="shop-container">
-                <!-- Книга 1 вече има линк към topbulgaria.html -->
-                <div class="book-item" id="book1" onclick="handleBookClick(1, 50, 'topbulgaria.html')">
+                <!-- Книга 1 сочи към линка от Google Drive -->
+                <div class="book-item" id="book1" onclick="handleBookClick(1, 50, 'https://drive.google.com/file/d/11sB0s5bs3ostLH5N4TiNHBOriVGtlgy7/view?usp=sharing')">
                     <img src="book1.png" alt="Книга 1">
                     Книга 1
                     <span>Цена: 50</span>
@@ -150,7 +150,6 @@
         const audioSlavi = new Audio('slavi.m4a');
         const audioKomentarite = new Audio('komentarite.m4a');
         
-        // Тук са добавени старите + новите 8 аудио файла
         const randomAudios = [
             new Audio('kucheto.m4a'),
             new Audio('put.m4a'),
@@ -169,7 +168,6 @@
         let randomAudioInterval;
         let lastAudioIndex = -1;
 
-        // Защита от повредена памет на устройството
         let totalClashvits = 0;
         let ownedBooks = [];
         try {
@@ -222,7 +220,6 @@
         function updateMenuUI() {
             document.getElementById('totalClashvitsUI').innerText = totalClashvits;
             
-            // Настройки за всяка книга (коя има линк за четене)
             const booksData = [
                 { id: 1, hasLink: true },
                 { id: 2, hasLink: false },
@@ -246,17 +243,14 @@
             });
         }
 
-        // Новата функция за книгите, която поддържа и четене
         function handleBookClick(bookId, price, url) {
-            // Ако вече е купена
             if (ownedBooks.includes(bookId)) {
                 if (url) {
-                    window.location.href = url; // Зарежда html файла за четене
+                    window.open(url, '_blank'); // Отваря Google Drive в нов раздел
                 }
                 return;
             }
             
-            // Ако не е купена, опитваме да я купим
             if (totalClashvits >= price) {
                 totalClashvits -= price;
                 ownedBooks.push(bookId);
